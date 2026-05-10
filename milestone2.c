@@ -149,3 +149,55 @@ void DrawArrow(Vector2 start, Vector2 end, Color color) {
     DrawLineEx(lineEnd, left, 5, RED);
     DrawLineEx(lineEnd, right, 5, RED);
 }
+void drawGraph(int N, Edge edges[], int M) {
+    Vector2 positions[MAX_NODES];
+    calculatePositions(N, positions);
+
+    SetTraceLogLevel(LOG_WARNING);
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Directed Weighted Graph - Milestone 2");
+    SetTargetFPS(60);
+
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText("Directed Weighted Graph - Milestone 2", 180, 30, 30, BLACK);
+
+        for (int i = 0; i < M; i++) {
+            int src = edges[i].src;
+            int dst = edges[i].dst;
+            int weight = edges[i].weight;
+
+            DrawArrow(positions[src], positions[dst], DARKGRAY);
+
+            Vector2 mid = {
+                (positions[src].x + positions[dst].x) / 2.0f,
+                (positions[src].y + positions[dst].y) / 2.0f
+            };
+
+            DrawCircleV(mid, 15, RAYWHITE);
+            DrawCircleLines((int)mid.x, (int)mid.y, 15, RED);
+
+            DrawText(TextFormat("%d", weight),
+                     (int)mid.x - 6,
+                     (int)mid.y - 10,
+                     20,
+                     RED);
+        }
+
+        for (int i = 0; i < N; i++) {
+            DrawCircleV(positions[i], 25, SKYBLUE);
+            DrawCircleLines((int)positions[i].x, (int)positions[i].y, 25, DARKBLUE);
+
+            DrawText(TextFormat("%d", i),
+                     (int)positions[i].x - 6,
+                     (int)positions[i].y - 10,
+                     20,
+                     BLACK);
+        }
+
+        EndDrawing();
+    }
+
+    CloseWindow();
+}
