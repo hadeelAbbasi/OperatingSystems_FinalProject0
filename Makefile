@@ -10,7 +10,7 @@ milestone2:
 	$(CC) $(CFLAGS) milestone2.c -o sim -lraylib -lm
 
 milestone3:
-	$(CC) $(CFLAGS) milestone3.c -o sim3 -lraylib -lm
+	$(CC) $(CFLAGS) milestone3.c -o sim -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
 
 clean:
 	rm -f dijkstra sim sim3
