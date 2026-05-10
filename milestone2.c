@@ -201,3 +201,86 @@ void drawGraph(int N, Edge edges[], int M) {
 
     CloseWindow();
 }
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: ./sim <file_name>\n");
+        return 1;
+    }
+
+    FILE *file = fopen(argv[1], "r");
+
+    if (file == NULL) {
+        printf("Error opening file\n");
+        return 1;
+    }
+
+    int N, M;
+
+    if (fscanf(file, "%d %d", &N, &M) != 2) {
+        printf("Invalid input\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (N <= 0 || N > MAX_NODES || M < 0 || M > MAX_EDGES) {
+        printf("Invalid input\n");
+        fclose(file);
+        return 1;
+    }
+
+    int graph[MAX_NODES][MAX_NODES];
+    Edge edges[MAX_EDGES];
+
+    for (int i = 0; i < MAX_NODES; i++) {
+        for (int j = 0; j < MAX_NODES; j++) {
+            graph[i][j] = INF;
+        }
+    }
+
+    for (int i = 0; i < N; i++) {
+        graph[i][i] = 0;
+    }
+
+    for (int i = 0; i < M; i++) {
+        int src, dst, weight;
+
+        if (fscanf(file, "%d %d %d", &src, &dst, &weight) != 3) {
+            printf("Invalid input\n");
+            fclose(file);
+            return 1;
+        }
+
+        if (src < 0 || dst < 0 || src >= N || dst >= N || weight < 0) {
+            printf("Invalid input\n");
+            fclose(file);
+            return 1;
+        }
+
+        graph[src][dst] = weight;
+
+        edges[i].src = src;
+        edges[i].dst = dst;
+        edges[i].weight = weight;
+    }
+
+    int start, end;
+
+    if (fscanf(file, "%d %d", &start, &end) != 2) {
+        printf("Invalid input\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (start < 0 || end < 0 || start >= N || end >= N) {
+        printf("Invalid input\n");
+        fclose(file);
+        return 1;
+    }
+
+    fclose(file);
+
+    dijkstra(N, graph, start, end);
+    drawGraph(N, edges, M);
+
+    return 0;
+}
