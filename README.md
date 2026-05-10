@@ -9,139 +9,93 @@ The project is divided into three milestones:
 - Milestone 2: Visualize the directed weighted graph using a graphical user interface (GUI).
 - Milestone 3: Simulate movement of an entity along the shortest path with interactive controls.
 
----
-
 ## Features
 
 ### Milestone 1
-- Reads graph data from graph.txt
+- Reads graph data from an input file
 - Validates input data
 - Implements Dijkstra’s shortest path algorithm
 - Displays the shortest path and total cost
 
 Example output:
-
 ```txt
 0 -> 2 -> 5
 12
 ```
 
----
-
 ### Milestone 2
-Graph visualization using raylib:
-
 - Displays graph nodes as circles
-- Displays directed edges using arrows
+- Displays directed edges with arrows
 - Displays edge weights
-- GUI window for graph visualization
-
----
+- GUI graph visualization
 
 ### Milestone 3
-Simulation features:
-
-- Animated entity movement along the shortest path
-- PLAY / STOP button
+- Animated entity movement
+- PLAY / STOP control button
 - Movement based on edge weights
 - 300ms movement steps
-- 1 second waiting time at intermediate nodes
-- Arrival message when destination is reached
-
----
+- 1 second waiting at intermediate nodes
+- Arrival message at destination
 
 ## Project Files
-
 ```txt
-main.c
+milestone1.c
+milestone2.c
+milestone3.c
 graph.txt
 Makefile
 README.md
-CMakeLists.txt
 ```
-
----
 
 ## Compilation and Execution
 
 ### Milestone 1
-
 Compile:
-
 ```bash
 make milestone1
 ```
 
 Run:
-
 ```bash
-./dijkstra
+./dijkstra graph.txt
 ```
 
----
-
 ### Milestone 2
-
 Compile:
-
 ```bash
 make milestone2
 ```
 
 Run:
-
 ```bash
-./sim
+./sim graph.txt
 ```
 
----
-
 ### Milestone 3
-
 Compile:
-
 ```bash
 make milestone3
 ```
 
 Run:
-
 ```bash
-./sim
+./sim graph.txt
 ```
 
----
-
 ## Cleaning Build Files
-
 ```bash
 make clean
 ```
 
----
-
 ## Input File Format
-
-The input file graph.txt must follow this format:
-
 ```txt
 N M
-src dst weight
 src dst weight
 ...
 start end
 ```
 
-Where:
-
-- N = number of nodes
-- M = number of edges
-- src = source node
-- dst = destination node
-- weight = edge weight
-
 Example:
-
 ```txt
 6 8
 0 1 4
@@ -155,21 +109,14 @@ Example:
 0 5
 ```
 
----
-
 ## Requirements
-
-This project requires:
-
 - GCC compiler
 - raylib graphics library
 - Linux / Ubuntu environment
 
----
+## Team Members and Responsibilities
 
-## Author
-
-- Sarah Jweiles
-- Sara Zuheka
-- Shahd Muhtaseb
-- Hadeel Abbasi
+- Shahd Muhtaseb - Project setup and documentation
+- Sara Zuheka - Dijkstra logic and GUI components
+- Sarah Jweiles - Graph structures, validation, and visualization logic
+- Hadeel Abbasi - Testing, Makefile updates, animation flow, and integration
