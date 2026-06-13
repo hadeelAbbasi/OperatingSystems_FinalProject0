@@ -76,6 +76,9 @@ This guarantees mutual exclusion and prevents multiple travelers from occupying 
 milestone1.c
 milestone2.c
 milestone3.c
+milestone4.c
+milestone5.c
+milestone6.c
 graph.txt
 Makefile
 README.md
