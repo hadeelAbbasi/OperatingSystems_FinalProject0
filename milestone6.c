@@ -1055,3 +1055,216 @@ void closeAndUnlinkSemaphores(sem_t *nodeSemaphores[],
     }
 }
 
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: ./sim <file_name>\n");
+        return 1;
+    }
+
+    FILE *file = fopen(argv[1], "r");
+
+    if (file == NULL) {
+        printf("Error opening file\n");
+        return 1;
+    }
+
+    int N, M;
+
+    if (fscanf(file, "%d %d", &N, &M) != 2) {
+        printf("Invalid input\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (N <= 0 || N > MAX_NODES || M < 0 || M > MAX_EDGES) {
+        printf("Invalid input\n");
+        fclose(file);
+        return 1;
+    }
+
+    int graph[MAX_NODES][MAX_NODES];
+    Edge edges[MAX_EDGES];
+
+    for (int i = 0; i < MAX_NODES; i++) {
+        for (int j = 0; j < MAX_NODES; j++) {
+            graph[i][j] = INF;
+        }
+    }
+
+    for (int i = 0; i < N; i++) {
+        graph[i][i] = 0;
+    }
+
+    for (int i = 0; i < M; i++) {
+        int src, dst, weight;
+
+        if (fscanf(file, "%d %d %d", &src, &dst, &weight) != 3) {
+            printf("Invalid input\n");
+            fclose(file);
+            return 1;
+        }
+
+        if (src < 0 || dst < 0 || src >= N || dst >= N || weight <= 0) {
+            printf("Invalid input\n");
+            fclose(file);
+            return 1;
+        }
+
+        graph[src][dst] = weight;
+
+        edges[i].src = src;
+        edges[i].dst = dst;
+        edges[i].weight = weight;
+    }
+
+    int travelerCount;
+
+    if (fscanf(file, "%d", &travelerCount) != 1) {
+        printf("Invalid travelers input\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (travelerCount <= 0 || travelerCount > MAX_TRAVELERS) {
+        printf("Invalid travelers count\n");
+        fclose(file);
+        return 1;
+    }
+
+    Traveler travelers[MAX_TRAVELERS];
+
+    for (int i = 0; i < travelerCount; i++) {
+        if (fscanf(file, "%d %d", &travelers[i].source, &travelers[i].dest) != 2) {
+            printf("Invalid traveler input\n");
+            fclose(file);
+            return 1;
+        }
+
+        if (travelers[i].source < 0 ||
+            travelers[i].dest < 0 ||
+            travelers[i].source >= N ||
+            travelers[i].dest >= N) {
+
+            printf("Invalid traveler input\n");
+            fclose(file);
+            return 1;
+        }
+
+        travelers[i].pid = -1;
+        travelers[i].finished = 0;
+        travelers[i].noPath = 0;
+        travelers[i].waiting = 0;
+        travelers[i].waitingNode = -1;
+        travelers[i].moving = 0;
+        travelers[i].entering = 0;
+        travelers[i].stopBeforeNextNode = 0;
+        travelers[i].currentNode = travelers[i].source;
+        travelers[i].nextNode = -1;
+        travelers[i].pipeFd[0] = -1;
+        travelers[i].pipeFd[1] = -1;
+        travelers[i].moveStartPosition = (Vector2){0, 0};
+        travelers[i].moveTargetPosition = (Vector2){0, 0};
+        travelers[i].moveStartTime = 0.0;
+        travelers[i].moveDuration = 0.3;
+        travelers[i].enterStartPosition = (Vector2){0, 0};
+        travelers[i].enterTargetPosition = (Vector2){0, 0};
+        travelers[i].enterStartTime = 0.0;
+        travelers[i].enterDuration = 0.18;
+        travelers[i].enterStartTime = 0.0;
+        travelers[i].enterDuration = 0.18;
+        travelers[i].enterStartPosition = (Vector2){0, 0};
+        travelers[i].enterTargetPosition = (Vector2){0, 0};
+    }
+
+    fclose(file);
+
+    sem_t *nodeSemaphores[MAX_NODES];
+    char semaphoreNames[MAX_NODES][64];
+
+    for (int i = 0; i < N; i++) {
+        snprintf(semaphoreNames[i],
+                 sizeof(semaphoreNames[i]),
+                 "/os_graph_node_%d_%d",
+                 (int)getpid(),
+                 i);
+
+        sem_unlink(semaphoreNames[i]);
+
+        nodeSemaphores[i] = sem_open(semaphoreNames[i],
+                                     O_CREAT | O_EXCL,
+                                     0600,
+                                     1);
+
+        if (nodeSemaphores[i] == SEM_FAILED) {
+            printf("sem_open failed\n");
+            closeAndUnlinkSemaphores(nodeSemaphores, semaphoreNames, i);
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < travelerCount; i++) {
+        if (pipe(travelers[i].pipeFd) == -1) {
+            printf("pipe failed\n");
+            closeAndUnlinkSemaphores(nodeSemaphores, semaphoreNames, N);
+            return 1;
+        }
+
+        pid_t pid = fork();
+
+        if (pid < 0) {
+            printf("fork failed\n");
+            closeAndUnlinkSemaphores(nodeSemaphores, semaphoreNames, N);
+            return 1;
+        }
+
+        if (pid == 0) {
+            close(travelers[i].pipeFd[0]);
+
+            childProcessWork(i,
+                             travelers[i].source,
+                             travelers[i].dest,
+                             N,
+                             graph,
+                             edges,
+                             M,
+                             travelers[i].pipeFd[1],
+                             nodeSemaphores);
+        }
+
+        close(travelers[i].pipeFd[1]);
+
+        int flags = fcntl(travelers[i].pipeFd[0], F_GETFL, 0);
+
+        if (flags == -1) {
+            printf("fcntl failed\n");
+            closeAndUnlinkSemaphores(nodeSemaphores, semaphoreNames, N);
+            return 1;
+        }
+
+        if (fcntl(travelers[i].pipeFd[0], F_SETFL, flags | O_NONBLOCK) == -1) {
+            printf("fcntl failed\n");
+            closeAndUnlinkSemaphores(nodeSemaphores, semaphoreNames, N);
+            return 1;
+        }
+
+        travelers[i].pid = pid;
+    }
+
+    runSimulation(N, edges, M, travelers, travelerCount);
+
+    for (int i = 0; i < travelerCount; i++) {
+        if (travelers[i].pipeFd[0] != -1) {
+            close(travelers[i].pipeFd[0]);
+        }
+    }
+
+    for (int i = 0; i < travelerCount; i++) {
+        if (travelers[i].pid > 0) {
+            waitpid(travelers[i].pid, NULL, 0);
+        }
+    }
+
+    closeAndUnlinkSemaphores(nodeSemaphores, semaphoreNames, N);
+
+    return 0;
+}
