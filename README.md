@@ -37,6 +37,40 @@ Example output:
 - 1 second waiting at intermediate nodes
 - Arrival message at destination
 
+### Milestone 4
+
+- Support for multiple travelers moving simultaneously.
+- Parent process creates child processes using fork().
+- Each traveler is displayed with a unique color.
+- Parent process manages the GUI and waits for all children to finish.
+
+  ## Milestone 5
+
+- Child processes independently compute their shortest paths using Dijkstra's algorithm.
+- IPC implemented using pipes.
+- Children send status updates to the parent process.
+- Parent process receives updates and displays traveler positions in the GUI.
+- Parent process prints execution logs showing traveler movement between nodes.
+
+### IPC Mechanism
+This milestone uses Unix pipes for inter-process communication (IPC).
+Each child process sends messages containing traveler status information to the parent process, and the parent updates the GUI accordingly.
+
+## Milestone 6
+
+### Features
+- Node synchronization using POSIX semaphores.
+- Only one traveler may stay inside a node at any given time.
+- Additional travelers wait outside the node until access is granted.
+- GUI visualizes waiting travelers.
+- Critical section implemented around node occupancy.
+
+### Synchronization Mechanism
+POSIX semaphores are used to protect each node.
+When a traveler reaches a node, it must acquire the node semaphore before entering.
+If the node is occupied, the traveler waits outside until the semaphore becomes available.
+This guarantees mutual exclusion and prevents multiple travelers from occupying the same node simultaneously.
+
 ## Project Files
 ```txt
 milestone1.c
@@ -78,6 +112,47 @@ make milestone3
 ```
 
 Run:
+```bash
+./sim graph.txt
+```
+### Milestone 4
+
+Compile:
+
+```bash
+make milestone4
+```
+
+Run:
+
+```bash
+./sim graph.txt
+```
+
+### Milestone 5
+
+Compile:
+
+```bash
+make milestone5
+```
+
+Run:
+
+```bash
+./sim graph.txt
+```
+
+### Milestone 6
+
+Compile:
+
+```bash
+make milestone6
+```
+
+Run:
+
 ```bash
 ./sim graph.txt
 ```
