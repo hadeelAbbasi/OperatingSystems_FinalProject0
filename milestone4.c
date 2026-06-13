@@ -132,35 +132,20 @@ int getEdgeWeight(Edge edges[], int M, int src, int dst) {
 }
 
 void calculatePositions(int N, Vector2 positions[]) {
-    Vector2 custom[MAX_NODES] = {
-        {450, 170},  // 0
-        {660, 260},  // 1
-        {610, 440},  // 2
-        {380, 520},  // 3
-        {180, 420},  // 4
-        {180, 250}   // 5
-    };
-
-    if (N == 6) {
-        for (int i = 0; i < N; i++) {
-            positions[i] = custom[i];
-        }
-        return;
-    }
-
     float centerX = SCREEN_WIDTH / 2.0f;
     float centerY = 360.0f;
-    float radius = 230.0f;
+    float radiusX = 240.0f;
+    float radiusY = 125.0f;
 
     for (int i = 0; i < N; i++) {
         float angle = 2.0f * PI * i / N - PI / 2.0f;
-        positions[i].x = centerX + radius * cosf(angle);
-        positions[i].y = centerY + radius * sinf(angle);
+        positions[i].x = centerX + radiusX * cosf(angle);
+        positions[i].y = centerY + radiusY * sinf(angle);
     }
 }
 
 void DrawArrow(Vector2 start, Vector2 end, Color color) {
-    float nodeRadius = 32.0f;
+    float nodeRadius = 25.0f;
 
     float dx = end.x - start.x;
     float dy = end.y - start.y;
@@ -179,13 +164,13 @@ void DrawArrow(Vector2 start, Vector2 end, Color color) {
     };
 
     Vector2 lineEnd = {
-        end.x - ux * (nodeRadius + 10),
-        end.y - uy * (nodeRadius + 10)
+        end.x - ux * (nodeRadius + 5),
+        end.y - uy * (nodeRadius + 5)
     };
 
-    DrawLineEx(lineStart, lineEnd, 3, color);
+    DrawLineEx(lineStart, lineEnd, 4, color);
 
-    float arrowSize = 18.0f;
+    float arrowSize = 28.0f;
     float angle = atan2f(dy, dx);
 
     Vector2 left = {
@@ -198,67 +183,42 @@ void DrawArrow(Vector2 start, Vector2 end, Color color) {
         lineEnd.y - arrowSize * sinf(angle + PI / 5)
     };
 
-    DrawLineEx(lineEnd, left, 4, color);
-    DrawLineEx(lineEnd, right, 4, color);
+    DrawLineEx(lineEnd, left, 5, RED);
+    DrawLineEx(lineEnd, right, 5, RED);
 }
 
 void drawStaticGraph(int N, Edge edges[], int M, Vector2 positions[]) {
-    Color bg = (Color){250, 252, 255, 255};
-    Color text = (Color){30, 38, 55, 255};
-    Color muted = (Color){105, 115, 130, 255};
-    Color edgeColor = (Color){85, 95, 110, 255};
-    Color nodeColor = (Color){65, 145, 220, 255};
-    Color nodeBorder = (Color){25, 80, 140, 255};
-
-    DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, bg);
-
-    DrawText("Directed Graph Traffic Simulation",
-         250, 25,
-         24,
-         (Color){35,45,65,255});
-    DrawText("Milestone 4 - Multiple Travelers and Processes",
-         300,
-         58,
-         14,
-         DARKGRAY);
+    DrawText("Graph GUI - Stage 4 Multiple Travelers", 150, 20, 30, BLACK);
 
     for (int i = 0; i < M; i++) {
         int src = edges[i].src;
         int dst = edges[i].dst;
         int weight = edges[i].weight;
 
-        DrawArrow(positions[src], positions[dst], edgeColor);
+        DrawArrow(positions[src], positions[dst], DARKGRAY);
 
         Vector2 mid = {
             (positions[src].x + positions[dst].x) / 2.0f,
             (positions[src].y + positions[dst].y) / 2.0f
         };
 
-        DrawRectangleRounded(
-            (Rectangle){mid.x - 16, mid.y - 13, 32, 26},
-            0.4f,
-            8,
-            (Color){255, 255, 255, 245}
-        );
-
+        DrawCircleV(mid, 13, RAYWHITE);
         DrawText(TextFormat("%d", weight),
                  (int)mid.x - 6,
-                 (int)mid.y - 9,
-                 18,
-                 text);
+                 (int)mid.y - 10,
+                 20,
+                 RED);
     }
 
     for (int i = 0; i < N; i++) {
-        DrawCircleV((Vector2){positions[i].x + 4, positions[i].y + 5}, 31, (Color){0, 0, 0, 35});
-
-        DrawCircleV(positions[i], 30, nodeColor);
-        DrawCircleLines((int)positions[i].x, (int)positions[i].y, 30, nodeBorder);
+        DrawCircleV(positions[i], 25, SKYBLUE);
+        DrawCircleLines((int)positions[i].x, (int)positions[i].y, 25, DARKBLUE);
 
         DrawText(TextFormat("%d", i),
                  (int)positions[i].x - 6,
-                 (int)positions[i].y - 11,
-                 22,
-                 WHITE);
+                 (int)positions[i].y - 10,
+                 20,
+                 BLACK);
     }
 }
 
@@ -383,22 +343,14 @@ void runSimulation(int N, Edge edges[], int M, Traveler travelers[], int travele
         }
 
         BeginDrawing();
-        ClearBackground((Color){250, 252, 255, 255});
+        ClearBackground(RAYWHITE);
 
         drawStaticGraph(N, edges, M, positions);
 
-        DrawRectangleRounded(button, 0.25f, 8, playing ? (Color){220, 70, 70, 255} : (Color){35, 170, 95, 255});
-        DrawText(playing ? "STOP" : "PLAY", playing ? 54 : 50, 32, 22, WHITE);
-        DrawRectangleRounded(
-            (Rectangle){690, 140, 180, 120},
-            0.15f,
-            8,
-            (Color){255,255,255,220}
-        );
+        DrawRectangleRec(button, playing ? RED : GREEN);
+        DrawText(playing ? "STOP" : "PLAY", 48, 32, 22, WHITE);
 
-        DrawText("Travelers", 735, 150, 20, DARKGRAY);
-
-
+        DrawText("Stage 4: parent GUI + forked child processes", 210, 80, 20, DARKGRAY);
 
         for (int i = 0; i < travelerCount; i++) {
             if (travelers[i].pathLength <= 0) {
@@ -414,14 +366,15 @@ void runSimulation(int N, Edge edges[], int M, Traveler travelers[], int travele
                      18,
                      travelers[i].color);
 
-            DrawText(TextFormat("T%d: %d -> %d",
-                    i + 1,
-                    travelers[i].source,
-                    travelers[i].dest),
-         720,
-         180 + i * 28,
-         18,
-         travelers[i].color);
+            DrawText(TextFormat("T%d: %d -> %d  PID=%d",
+                                i + 1,
+                                travelers[i].source,
+                                travelers[i].dest,
+                                travelers[i].pid),
+                     20,
+                     610 + i * 18,
+                     16,
+                     travelers[i].color);
         }
 
         if (allTravelersFinished(travelers, travelerCount)) {
