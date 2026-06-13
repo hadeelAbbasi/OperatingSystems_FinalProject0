@@ -376,11 +376,7 @@ void enterNodeWithSemaphore(sem_t *nodeSemaphores[],
                 nextNode,
                 STATUS_ARRIVED);
 
-    /*
-     * The GUI uses a very short ENTERING animation from the edge entrance
-     * into the node center. Keep the semaphore locked during this animation,
-     * then keep the traveler one full second inside the node.
-     */
+   
     sleepMilliseconds(ENTER_ANIMATION_MS);
     sleep(1);
 
@@ -399,12 +395,7 @@ void enterNodeWithSemaphore(sem_t *nodeSemaphores[],
                     nextNode,
                     STATUS_MOVING);
 
-        /*
-         * Keep the semaphore locked for a short exit animation.
-         * This prevents the next waiting traveler from being shown inside
-         * the same node while the current traveler is still visually touching
-         * the node center.
-         */
+        
         sleepMilliseconds(120);
     }
 
