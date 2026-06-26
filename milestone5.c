@@ -46,7 +46,8 @@ typedef struct {
     Vector2 position;
     Color color;
     pid_t pid;
-    int pipeFd[2];
+    int pipeFd[2];      // child -> parent
+    int ackPipeFd[2];   // parent -> child confirmation
 } Traveler;
 
 int minDistance(int dist[], int visited[], int N) {
@@ -233,7 +234,17 @@ int allTravelersFinished(Traveler travelers[], int travelerCount) {
     return 1;
 }
 
+void waitForParentConfirmation(int ackReadFd) {
+    char confirmation;
+    ssize_t bytesRead;
+
+    do {
+        bytesRead = read(ackReadFd, &confirmation, sizeof(confirmation));
+    } while (bytesRead == -1 && errno == EINTR);
+}
+
 void sendMessage(int pipeWriteFd,
+                 int ackReadFd,
                  int travelerIndex,
                  int currentNode,
                  int nextNode,
@@ -249,6 +260,9 @@ void sendMessage(int pipeWriteFd,
     msg.noPath = noPath;
 
     write(pipeWriteFd, &msg, sizeof(Message));
+
+    // The child waits for parent confirmation before continuing.
+    waitForParentConfirmation(ackReadFd);
 }
 void sleepMilliseconds(int milliseconds) {
     struct timespec ts;
@@ -265,13 +279,15 @@ void childProcessWork(int travelerIndex,
                       int graph[MAX_NODES][MAX_NODES],
                       Edge edges[],
                       int M,
-                      int pipeWriteFd) {
+                      int pipeWriteFd,
+                      int ackReadFd) {
     int path[MAX_NODES];
     int pathLength = dijkstraSilent(N, graph, source, dest, path);
 
     if (pathLength <= 0) {
-        sendMessage(pipeWriteFd, travelerIndex, source, -1, 1, 1);
+        sendMessage(pipeWriteFd, ackReadFd, travelerIndex, source, -1, 1, 1);
         close(pipeWriteFd);
+        close(ackReadFd);
         exit(0);
     }
 
@@ -287,7 +303,7 @@ void childProcessWork(int travelerIndex,
             nextNode = path[i + 1];
         }
 
-        sendMessage(pipeWriteFd, travelerIndex, currentNode, nextNode, finished, 0);
+        sendMessage(pipeWriteFd, ackReadFd, travelerIndex, currentNode, nextNode, finished, 0);
 
         if (finished) {
             break;
@@ -300,7 +316,7 @@ void childProcessWork(int travelerIndex,
         int weight = getEdgeWeight(edges, M, currentNode, nextNode);
 
         if (weight == INF || weight <= 0) {
-            sendMessage(pipeWriteFd, travelerIndex, currentNode, -1, 1, 1);
+            sendMessage(pipeWriteFd, ackReadFd, travelerIndex, currentNode, -1, 1, 1);
             close(pipeWriteFd);
             exit(0);
         }
@@ -309,6 +325,7 @@ sleepMilliseconds(weight * 300);
     }
 
     close(pipeWriteFd);
+    close(ackReadFd);
     exit(0);
 }
 
@@ -326,6 +343,10 @@ void handleIncomingMessages(Traveler travelers[],
                 if (index < 0 || index >= travelerCount) {
                     continue;
                 }
+
+                // Parent sends confirmation back to the child after reading the message.
+                char confirmation = 'A';
+                write(travelers[index].ackPipeFd[1], &confirmation, sizeof(confirmation));
 
                 travelers[index].currentNode = msg.currentNode;
                 travelers[index].nextNode = msg.nextNode;
@@ -573,6 +594,8 @@ int main(int argc, char *argv[]) {
         travelers[i].nextNode = -1;
         travelers[i].pipeFd[0] = -1;
         travelers[i].pipeFd[1] = -1;
+        travelers[i].ackPipeFd[0] = -1;
+        travelers[i].ackPipeFd[1] = -1;
     }
 
     fclose(file);
@@ -580,6 +603,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < travelerCount; i++) {
         if (pipe(travelers[i].pipeFd) == -1) {
             printf("pipe failed\n");
+            return 1;
+        }
+
+        if (pipe(travelers[i].ackPipeFd) == -1) {
+            printf("ack pipe failed\n");
             return 1;
         }
 
@@ -592,6 +620,7 @@ int main(int argc, char *argv[]) {
 
         if (pid == 0) {
             close(travelers[i].pipeFd[0]);
+            close(travelers[i].ackPipeFd[1]);
 
             childProcessWork(i,
                              travelers[i].source,
@@ -600,10 +629,12 @@ int main(int argc, char *argv[]) {
                              graph,
                              edges,
                              M,
-                             travelers[i].pipeFd[1]);
+                             travelers[i].pipeFd[1],
+                             travelers[i].ackPipeFd[0]);
         }
 
         close(travelers[i].pipeFd[1]);
+        close(travelers[i].ackPipeFd[0]);
 
         int flags = fcntl(travelers[i].pipeFd[0], F_GETFL, 0);
 
@@ -625,6 +656,10 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < travelerCount; i++) {
         if (travelers[i].pipeFd[0] != -1) {
             close(travelers[i].pipeFd[0]);
+        }
+
+        if (travelers[i].ackPipeFd[1] != -1) {
+            close(travelers[i].ackPipeFd[1]);
         }
     }
 
