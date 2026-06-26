@@ -48,10 +48,20 @@ Message schedulerPopNext(NodeQueue queues[],
         }
     }
 
+    else if (scheduler == SCHD_PRIORITY) {
+        for (int i = 1; i < queues[node].count; i++) {
+            if (queues[node].items[i].pid <
+                queues[node].items[chosen].pid) {
+                chosen = i;
+            }
+        }
+    }
+
     Message result = queues[node].items[chosen];
 
-    printf("[SCHEDULER] selected T%d for node %d using %s | remainingCost=%d\n",
+    printf("[SCHEDULER] selected T%d PID=%d for node %d using %s | remainingCost=%d\n",
            result.travelerIndex + 1,
+           result.pid,
            node,
            schedulerName(scheduler),
            result.remainingCost);
@@ -68,6 +78,10 @@ Message schedulerPopNext(NodeQueue queues[],
 const char *schedulerName(SchedulerType scheduler) {
     if (scheduler == SCHD_SJF) {
         return "SJF";
+    }
+
+    if (scheduler == SCHD_PRIORITY) {
+        return "PRIORITY";
     }
 
     return "FCFS";

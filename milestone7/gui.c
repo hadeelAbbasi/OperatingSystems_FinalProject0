@@ -189,14 +189,19 @@ static void drawTravelers(GraphData *data) {
                         12,
                         BLACK);
 
-        char label[20];
-        sprintf(label, "T%d", i + 1);
+        char label[40];
 
-        DrawText(label,
-                 (int)t->position.x - 10,
-                 (int)t->position.y - 30,
-                 16,
-                 BLACK);
+if (t->pid > 0) {
+    sprintf(label, "T%d PID:%d", i + 1, t->pid);
+} else {
+    sprintf(label, "T%d", i + 1);
+}
+
+DrawText(label,
+         (int)t->position.x - 35,
+         (int)t->position.y - 32,
+         14,
+         BLACK);
 
         if (t->waiting) {
             DrawText("WAIT",

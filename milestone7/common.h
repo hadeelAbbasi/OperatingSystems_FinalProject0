@@ -22,7 +22,8 @@
 
 typedef enum {
     SCHD_FCFS = 1,
-    SCHD_SJF = 2
+    SCHD_SJF = 2,
+    SCHD_PRIORITY = 3
 } SchedulerType;
 
 typedef enum {

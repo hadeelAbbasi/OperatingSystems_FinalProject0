@@ -19,6 +19,10 @@ static SchedulerType parseScheduler(const char *name) {
         return SCHD_SJF;
     }
 
+    if (strcmp(name, "priority") == 0) {
+        return SCHD_PRIORITY;
+    }
+
     return SCHD_FCFS;
 }
 
@@ -26,6 +30,7 @@ static void printUsage(void) {
     printf("Usage:\n");
     printf("./sim -schd fcfs <file_name>\n");
     printf("./sim -schd sjf <file_name>\n");
+    printf("./sim -schd priority <file_name>\n");
 }
 
 static Vector2 getOutsideNodePosition(Vector2 positions[],
@@ -389,6 +394,11 @@ int main(int argc, char *argv[]) {
         }
 
         data.travelers[i].pid = pid;
+        printf("[PARENT] T%d created with PID=%d | from %d to %d\n",
+        i + 1,
+       pid,
+       data.travelers[i].source,
+       data.travelers[i].dest);
 
         close(data.travelers[i].childToParent[1]);
         close(data.travelers[i].parentToChild[0]);
