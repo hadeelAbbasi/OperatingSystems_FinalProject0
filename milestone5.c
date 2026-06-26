@@ -32,6 +32,7 @@ typedef struct {
     int nextNode;
     int finished;
     int noPath;
+    int deadEnd;
 } Message;
 
 typedef struct {
@@ -238,7 +239,8 @@ void sendMessage(int pipeWriteFd,
                  int currentNode,
                  int nextNode,
                  int finished,
-                 int noPath) {
+                 int noPath,
+                 int deadEnd) {
     Message msg;
 
     msg.pid = getpid();
@@ -247,6 +249,7 @@ void sendMessage(int pipeWriteFd,
     msg.nextNode = nextNode;
     msg.finished = finished;
     msg.noPath = noPath;
+    msg.deadEnd = deadEnd;
 
     write(pipeWriteFd, &msg, sizeof(Message));
 }
@@ -270,10 +273,10 @@ void childProcessWork(int travelerIndex,
     int pathLength = dijkstraSilent(N, graph, source, dest, path);
 
     if (pathLength <= 0) {
-        sendMessage(pipeWriteFd, travelerIndex, source, -1, 1, 1);
-        close(pipeWriteFd);
-        exit(0);
-    }
+    sendMessage(pipeWriteFd, travelerIndex, source, dest, 1, 1, 0);
+    close(pipeWriteFd);
+    exit(0);
+}
 
     for (int i = 0; i < pathLength; i++) {
         int currentNode = path[i];
@@ -287,7 +290,7 @@ void childProcessWork(int travelerIndex,
             nextNode = path[i + 1];
         }
 
-        sendMessage(pipeWriteFd, travelerIndex, currentNode, nextNode, finished, 0);
+        sendMessage(pipeWriteFd, travelerIndex, currentNode, nextNode, finished, 0, 0);
 
         if (finished) {
             break;
@@ -300,10 +303,10 @@ void childProcessWork(int travelerIndex,
         int weight = getEdgeWeight(edges, M, currentNode, nextNode);
 
         if (weight == INF || weight <= 0) {
-            sendMessage(pipeWriteFd, travelerIndex, currentNode, -1, 1, 1);
+            sendMessage(pipeWriteFd, travelerIndex, currentNode, dest, 1, 0, 1);
             close(pipeWriteFd);
             exit(0);
-        }
+}
 
 sleepMilliseconds(weight * 300);
     }
@@ -330,6 +333,18 @@ void handleIncomingMessages(Traveler travelers[],
                 travelers[index].currentNode = msg.currentNode;
                 travelers[index].nextNode = msg.nextNode;
                 travelers[index].position = positions[msg.currentNode];
+if (msg.deadEnd) {
+    printf("[PID=%d] arrived at node %d | NO ROUTE TO DESTINATION %d\n",
+           msg.pid,
+           msg.currentNode,
+           msg.nextNode);
+    printf("[PID=%d] finished\n", msg.pid);
+    fflush(stdout);
+
+    travelers[index].noPath = 1;
+    travelers[index].finished = 1;
+    continue;
+}
 
                 if (msg.noPath) {
                     printf("[PID=%d] No path found\n", msg.pid);
